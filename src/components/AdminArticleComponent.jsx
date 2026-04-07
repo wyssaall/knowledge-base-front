@@ -18,7 +18,8 @@ const AdminArticleComponent = ({
   status = "Validated", 
   index = 0,
   onValidate,
-  onDelete
+  onDelete,
+  onEdit
 }) => {
   const isPending = status === "Pending";
 
@@ -71,7 +72,10 @@ const AdminArticleComponent = ({
               <CheckCircle className="w-3.5 h-3.5 mr-2" /> Valider
             </button>
           ) : (
-            <button className="flex-1 text-[11px] h-9 flex items-center justify-center rounded-xl hover:bg-emerald-50 transition-all text-gray-600 font-bold border border-transparent hover:border-emerald-100 bg-gray-50">
+            <button
+              onClick={() => onEdit && onEdit(id)}
+              className="flex-1 text-[11px] h-9 flex items-center justify-center rounded-xl hover:bg-emerald-50 transition-all text-gray-600 font-bold border border-transparent hover:border-emerald-100 bg-gray-50"
+            >
               <Edit2 className="w-3.5 h-3.5 mr-2" /> Modifier
             </button>
           )}

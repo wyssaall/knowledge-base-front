@@ -1,59 +1,92 @@
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { UserPlus, X, Users, Search, ShieldCheck, UserCog } from "lucide-react";
-import AdminUserComponent from "../../components/AdminUserComponent.jsx";
-
-const initialUsers = [
-  { id: 1, username: "wissal_dz", fullName: "Wissal", category: "SI", role: "Administrateur" },
-  { id: 2, username: "yasmine_it", fullName: "Yasmine", category: "Frontend", role: "Technicien" },
-  { id: 3, username: "sarah_net", fullName: "Sarah", category: "NETWORK", role: "Technicien" },
-];
+import React, { useEffect, useMemo, useState } from "react";
+import { AnimatePresence } from "framer-motion";
+import { Search, ShieldCheck, UserPlus } from "lucide-react";
+import api from "../../services/api";
+import Modal from "../../components/Modal";
+import AdminUserComponent from "../../components/AdminUserComponent";
 
 const UsersManagement = () => {
-  const [users, setUsers] = useState(initialUsers);
-  const [showForm, setShowForm] = useState(false);
-  const [editingUser, setEditingUser] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [search, setSearch] = useState("");
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [newUser, setNewUser] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "technicien",
+  });
 
-  const handleDelete = (id) => {
-    setUsers(users.filter(u => u.id !== id));
-  };
-
-  const handleEdit = (user) => {
-    setEditingUser(user);
-    setShowForm(true);
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const userData = {
-      fullName: formData.get("fullName"),
-      username: formData.get("username"),
-      category: formData.get("category"),
-      role: formData.get("role"),
-    };
-
-    if (editingUser) {
-      setUsers(users.map(u => u.id === editingUser.id ? { ...u, ...userData } : u));
-    } else {
-      setUsers([...users, { id: Date.now(), ...userData }]);
+  const fetchUsers = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await api.get("/api/users", true);
+      setUsers(data);
+    } catch (err) {
+      setError(err.message || "Failed to load users");
+    } finally {
+      setLoading(false);
     }
-
-    setShowForm(false);
-    setEditingUser(null);
   };
 
-  const filteredUsers = users.filter(
-    (u) =>
-      u.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.username.toLowerCase().includes(searchQuery.toLowerCase())
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const removeUser = async (id) => {
+    try {
+      await api.delete(`/api/admin/users/${id}`, true);
+      setSuccess("User deleted");
+      fetchUsers();
+    } catch (err) {
+      setError(err.message || "Failed to delete user");
+    }
+  };
+
+  const filteredUsers = useMemo(
+    () =>
+      users.filter((u) =>
+        `${u.name} ${u.email}`.toLowerCase().includes(search.toLowerCase())
+      ),
+    [users, search]
   );
+
+  const updateSelectedRole = async () => {
+    if (!selectedUser?._id) return;
+    try {
+      await api.patch(
+        `/api/admin/users/${selectedUser._id}/role`,
+        { role: selectedUser.role },
+        true
+      );
+      setSuccess("Role changed successfully");
+      setSelectedUser(null);
+      fetchUsers();
+    } catch (err) {
+      setError(err.message || "Failed to update role");
+    }
+  };
+
+  const createUser = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post("/api/users", newUser, true);
+      setSuccess("User created successfully");
+      setIsCreateOpen(false);
+      setNewUser({ name: "", email: "", password: "", role: "technicien" });
+      fetchUsers();
+    } catch (err) {
+      setError(err.message || "Failed to create user");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100/50 font-sans">
-      {/* Header */}
-      <div className="border-b border-gray-200 bg-white sticky top-0 z-20 backdrop-blur-md bg-white/80">
+      <div className="border-b border-gray-200 sticky top-0 z-20 backdrop-blur-md bg-white/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
             <div className="flex items-center gap-4">
@@ -65,148 +98,134 @@ const UsersManagement = () => {
                 <p className="text-sm text-gray-500 font-medium italic">Accès réservé aux administrateurs</p>
               </div>
             </div>
-
             <button
-              onClick={() => {
-                if (showForm) {
-                    setShowForm(false);
-                    setEditingUser(null);
-                } else {
-                    setShowForm(true);
-                }
-              }}
-              className={`inline-flex items-center px-6 py-3 rounded-xl text-sm font-bold transition-all duration-300 ${showForm
-                ? "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
-                : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-100"
-                }`}
+              onClick={() => setIsCreateOpen(true)}
+              className="inline-flex items-center px-6 py-3 rounded-xl text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-100 transition-all"
             >
-              {showForm ? (
-                <><X className="w-4 h-4 mr-2" /> Annuler</>
-              ) : (
-                <><UserPlus className="w-4 h-4 mr-2" /> Nouvel Utilisateur</>
-              )}
+              <UserPlus className="w-4 h-4 mr-2" /> Nouvel Utilisateur
             </button>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        {/* Form Section */}
-        <AnimatePresence mode="wait">
-          {showForm && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="mb-10"
-            >
-              <div className="bg-white border border-gray-200 rounded-3xl shadow-xl shadow-gray-200/50 overflow-hidden">
-                <div className="px-8 py-6 border-b border-gray-50 flex items-center gap-3">
-                  <div className="p-2 bg-emerald-50 rounded-lg">
-                    <UserCog className="w-5 h-5 text-emerald-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900">
-                        {editingUser ? "Modifier l'utilisateur" : "Créer un nouveau compte"}
-                    </h3>
-                    <p className="text-sm text-gray-500">Configurez les accès et le rôle de l'utilisateur.</p>
-                  </div>
-                </div>
-                <div className="p-8">
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-sm font-bold text-gray-700 ml-1">Nom Complet</label>
-                        <input name="fullName" required defaultValue={editingUser?.fullName} placeholder="Ex: Jean Dupont" className="w-full h-12 rounded-xl border border-gray-200 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-bold text-gray-700 ml-1">Nom d'utilisateur</label>
-                        <input name="username" required defaultValue={editingUser?.username} placeholder="Ex: jdupont" className="w-full h-12 rounded-xl border border-gray-200 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all" />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-sm font-bold text-gray-700 ml-1">Catégorie</label>
-                        <select name="category" defaultValue={editingUser?.category || "SI"} className="w-full h-12 rounded-xl border border-gray-200 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none bg-white">
-                          <option>SI</option>
-                          <option>NETWORK</option>
-                          <option>Frontend</option>
-                          <option>Backend</option>
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-bold text-gray-700 ml-1">Rôle</label>
-                        <select name="role" defaultValue={editingUser?.role || "Technicien"} className="w-full h-12 rounded-xl border border-gray-200 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none bg-white font-bold">
-                          <option value="Administrateur">🛡️ Administrateur</option>
-                          <option value="Technicien">🔧 Technicien</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end gap-4 pt-6 border-t border-gray-50">
-                      <button type="button" onClick={() => { setShowForm(false); setEditingUser(null); }} className="px-6 py-3 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-all">
-                        Annuler
-                      </button>
-                      <button type="submit" className="px-8 py-3 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-100 transition-all">
-                        {editingUser ? "Sauvegarder les modifications" : "Créer le compte"}
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* List Section */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8">
-          <div className="flex items-center gap-3">
-            <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">Utilisateurs enregistrés</h2>
-            <div className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-black rounded-full">
-              {filteredUsers.length}
-            </div>
-          </div>
-          <div className="relative w-full sm:w-80">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              placeholder="Rechercher un utilisateur..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-12 pl-12 pr-4 rounded-2xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm transition-all bg-white"
-            />
-          </div>
+        <div className="relative w-full sm:w-80 mb-8">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Rechercher un utilisateur..."
+            className="w-full h-12 pl-12 pr-4 rounded-2xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm transition-all bg-white"
+          />
         </div>
+        {error && <p className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+        {success && <p className="mb-4 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-700">{success}</p>}
 
-        {/* Users Grid */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          <AnimatePresence>
-            {filteredUsers.map((user, i) => (
-              <AdminUserComponent
-                key={user.id}
-                id={user.id}
-                username={user.username}
-                fullName={user.fullName}
-                category={user.category}
-                role={user.role}
-                index={i}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            ))}
-          </AnimatePresence>
-        </div>
-
-        {filteredUsers.length === 0 && (
-          <div className="text-center py-24 bg-white rounded-3xl border-2 border-dashed border-gray-100">
-            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Users className="w-10 h-10 text-gray-300" />
-            </div>
-            <h3 className="text-gray-900 font-extrabold text-lg">Aucun utilisateur trouvé</h3>
-            <p className="text-gray-500 mt-2">Essayez d'ajuster vos critères de recherche.</p>
+        {loading ? (
+          <p>Loading...</p>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <AnimatePresence>
+              {filteredUsers.map((user, index) => (
+                <AdminUserComponent
+                  key={user._id}
+                  id={user._id}
+                  username={user.email.split("@")[0]}
+                  fullName={user.name}
+                  category={"SI"}
+                  role={user.role === "admin" ? "Administrateur" : "Technicien"}
+                  index={index}
+                  onEdit={() => setSelectedUser({ ...user })}
+                  onDelete={removeUser}
+                />
+              ))}
+            </AnimatePresence>
           </div>
         )}
       </div>
+
+      <Modal isOpen={Boolean(selectedUser)} onClose={() => setSelectedUser(null)} title="Modifier le role">
+        {selectedUser && (
+          <div className="grid gap-4">
+            <p className="text-sm text-gray-600">
+              Update role for <span className="font-semibold">{selectedUser.name}</span>
+            </p>
+            <select
+              value={selectedUser.role}
+              onChange={(e) => setSelectedUser((prev) => ({ ...prev, role: e.target.value }))}
+              className="rounded-xl border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="technicien">Technicien</option>
+              <option value="admin">Administrateur</option>
+            </select>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setSelectedUser(null)}
+                className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={updateSelectedRole}
+                className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+              >
+                Enregistrer
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Ajouter un utilisateur">
+        <form onSubmit={createUser} className="grid gap-4">
+          <input
+            value={newUser.name}
+            onChange={(e) => setNewUser((prev) => ({ ...prev, name: e.target.value }))}
+            placeholder="Nom complet"
+            className="rounded-xl border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            required
+          />
+          <input
+            type="email"
+            value={newUser.email}
+            onChange={(e) => setNewUser((prev) => ({ ...prev, email: e.target.value }))}
+            placeholder="Email"
+            className="rounded-xl border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            required
+          />
+          <input
+            type="password"
+            value={newUser.password}
+            onChange={(e) => setNewUser((prev) => ({ ...prev, password: e.target.value }))}
+            placeholder="Mot de passe"
+            className="rounded-xl border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            required
+          />
+          <select
+            value={newUser.role}
+            onChange={(e) => setNewUser((prev) => ({ ...prev, role: e.target.value }))}
+            className="rounded-xl border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="technicien">Technicien</option>
+            <option value="admin">Administrateur</option>
+          </select>
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setIsCreateOpen(false)}
+              className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+            >
+              Ajouter
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

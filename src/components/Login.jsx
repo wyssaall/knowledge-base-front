@@ -1,46 +1,69 @@
-import React from 'react'
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../services/api";
 
 function Login() {
-    return (
-        <div className="flex flex-1 items-center justify-center min-h-screen bg-gradient-to-r from-green-300 to-green-700 px-4">
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-            <div className="w-full max-w-md backdrop-blur-lg bg-white/90 p-8 rounded-2xl shadow-2xl border border-white/30">
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
-                {/* Title */}
-                <h2 className="text-3xl font-bold text-center text-gray-800 mb-6 tracking-tight">
-                    Welcome Back
-                </h2>
+    try {
+      const response = await api.post("/api/auth/login", { email, password });
+      localStorage.setItem("token", response.token);
+      navigate("/admin/articles", { replace: true });
+    } catch (err) {
+      setError(err.message || "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-r from-green-300 to-green-700 px-4">
+      <div className="w-full max-w-md rounded-2xl border border-white/30 bg-white/90 p-8 shadow-2xl backdrop-blur-lg">
+        <h2 className="mb-6 text-center text-3xl font-bold tracking-tight text-gray-800">
+          Welcome Back
+        </h2>
 
-                {/* Inputs */}
-                <div className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Username"
+            className="rounded-lg border border-gray-200 bg-gray-50 p-3 shadow-sm transition-all duration-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500"
+            required
+          />
 
-                    <input
-                        type="text"
-                        placeholder="Username"
-                        className="border border-gray-200 p-3 rounded-lg bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-200 shadow-sm"
-                    />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            className="rounded-lg border border-gray-200 bg-gray-50 p-3 shadow-sm transition-all duration-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500"
+            required
+          />
 
-                    <input
-                        type="password"
-                        placeholder="Password"
-                        className="border border-gray-200 p-3 rounded-lg bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-200 shadow-sm"
-                    />
+          {error && <p className="text-sm text-red-600">{error}</p>}
 
-
-
-                    {/* Button */}
-                    <button className="bg-green-600 text-white p-3 rounded-lg font-semibold shadow-md hover:bg-green-700 hover:shadow-lg active:scale-[0.98] transition-all duration-200">
-                        Login
-                    </button>
-                </div>
-
-
-
-
-            </div>
-        </div>
-    )
+          <button
+            type="submit"
+            disabled={loading}
+            className="rounded-lg bg-green-600 p-3 font-semibold text-white shadow-md transition-all duration-200 hover:bg-green-700 hover:shadow-lg disabled:opacity-70"
+          >
+            {loading ? "Loading..." : "Login"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
 }
 
-export default Login
+export default Login;

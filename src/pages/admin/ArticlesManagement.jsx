@@ -160,15 +160,19 @@ const ArticlesManagement = () => {
     try {
       if (editingArticle?._id) {
         await api.put(`/api/articles/${editingArticle._id}`, formData, true, true);
-        setSuccess("Article updated successfully");
+        setSuccess(t('admin.update_success'));
       } else {
         await api.post("/api/articles", formData, true, true);
-        setSuccess("Article created successfully");
+        setSuccess(t('admin.add_success'));
       }
       closeModal();
       fetchArticles(true);
     } catch (err) {
-      setError(err.message || "Article save failed");
+      let msg = err.message || "Article save failed";
+      if (err.data?.details && Array.isArray(err.data.details)) {
+        msg = err.data.details.map(d => d.msg).join(", ");
+      }
+      setError(msg);
     }
   };
 
@@ -220,7 +224,7 @@ const ArticlesManagement = () => {
                   id={article._id}
                   title={article.title}
                   description={article.description}
-                  category={article.categories && article.categories.length > 0 ? article.categories[0].name : "SI"}
+                  category={article.categories && article.categories.length > 0 && article.categories[0].name ? article.categories[0].name : "SI"}
                   date={new Date(article.createdAt).toLocaleDateString()}
                   image={article.imageUrl ? `${API_BASE_URL}${article.imageUrl}` : undefined}
                   status={article.status}
@@ -251,6 +255,8 @@ const ArticlesManagement = () => {
             placeholder={t('admin.title_placeholder')}
             className="rounded-xl border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             required
+            minLength={3}
+            maxLength={150}
           />
           <textarea
             name="description"
@@ -259,6 +265,9 @@ const ArticlesManagement = () => {
             placeholder={t('admin.desc_placeholder')}
             className="rounded-xl border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             rows={2}
+            required
+            minLength={10}
+            maxLength={500}
           />
           <textarea
             name="content"
@@ -268,6 +277,7 @@ const ArticlesManagement = () => {
             className="rounded-xl border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             rows={6}
             required
+            minLength={20}
           />
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-gray-700">{t('admin.categories_select')}</label>

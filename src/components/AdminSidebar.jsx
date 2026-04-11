@@ -1,5 +1,5 @@
-import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { NavLink, useNavigate, useParams } from 'react-router-dom';
 import { 
   FileText, 
   Users, 
@@ -8,29 +8,49 @@ import {
   LogOut, 
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import api from '../services/api';
 
 const AdminSidebar = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await api.get('/api/auth/me', true);
+        setUser(res.user);
+      } catch (err) {
+        console.error("Failed to fetch user info", err);
+      }
+    };
+    fetchUser();
+  }, []);
+
   const menuItems = [
     { 
       title: 'Articles', 
-      path: '/admin/articles', 
-      icon: <FileText size={20} /> 
+      path: `/${id}/articles`, 
+      icon: <FileText size={20} />,
+      roles: ['admin', 'technicien']
     },
     { 
       title: 'Utilisateurs', 
-      path: '/admin/users', 
-      icon: <Users size={20} /> 
+      path: `/${id}/users`, 
+      icon: <Users size={20} />,
+      roles: ['admin'] 
     },
     { 
       title: 'Categories', 
-      path: '/admin/categories', 
-      icon: <Tag size={20} /> 
+      path: `/${id}/categories`, 
+      icon: <Tag size={20} />,
+      roles: ['admin'] // Restricted to admin ONLY so tech can't add categories
     },
     { 
       title: 'Comments', 
-      path: '/admin/comments', 
-      icon: <MessageSquareText size={20} /> 
+      path: `/${id}/comments`, 
+      icon: <MessageSquareText size={20} />,
+      roles: ['admin'] 
     },
   ];
 
@@ -49,7 +69,7 @@ const AdminSidebar = () => {
           </p>
         </div>
         
-        {menuItems.map((item) => (
+        {menuItems.filter(item => !user || item.roles.includes(user.role)).map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
@@ -82,6 +102,13 @@ const AdminSidebar = () => {
 
       {/* Footer / User Profile */}
       <div className="p-4 border-t border-gray-100">
+        {user && (
+          <div className="mb-4 flex flex-col items-center px-2">
+            <div className="text-sm font-bold text-gray-800">{user.name}</div>
+            <div className="text-xs text-gray-500 capitalize">{user.role}</div>
+            <div className="text-xs font-semibold text-emerald-600 mt-1 uppercase tracking-wider">{user.domain?.name || user.domain || "Sans domaine"}</div>
+          </div>
+        )}
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 hover:bg-red-50 hover:text-red-600 transition-all duration-200"

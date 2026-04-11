@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Bookmark, BookmarkCheck } from "lucide-react";
 import api, { API_BASE_URL } from "../../services/api";
 import { getSavedArticles, isArticleSaved, removeSavedArticle, saveArticle } from "../../utils/savedArticles";
 
 function ArticlePage() {
   const [articles, setArticles] = useState([]);
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [categories, setCategories] = useState([]);
   const [savedIds, setSavedIds] = useState([]);
+  const [viewSaved, setViewSaved] = useState(false);
 
   useEffect(() => {
     setSavedIds(getSavedArticles());
@@ -23,12 +23,22 @@ function ArticlePage() {
       setLoading(true);
       setError("");
       try {
-        const query = new URLSearchParams({
+        let queryParams = {
           page: String(page),
           limit: "9",
           ...(search ? { search } : {}),
-          ...(category ? { category } : {}),
-        });
+        };
+        if (viewSaved) {
+          if (savedIds.length === 0) {
+            setArticles([]);
+            setTotalPages(1);
+            setLoading(false);
+            return;
+          }
+          queryParams.ids = savedIds.join(",");
+        }
+        
+        const query = new URLSearchParams(queryParams);
         const data = await api.get(`/api/public/articles?${query.toString()}`);
         setArticles(data.data || []);
         setTotalPages(data.totalPages || 1);
@@ -40,19 +50,7 @@ function ArticlePage() {
     };
 
     fetchArticles();
-  }, [page, search, category]);
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const data = await api.get("/api/categories");
-        setCategories(data || []);
-      } catch {
-        setCategories([]);
-      }
-    };
-    fetchCategories();
-  }, []);
+  }, [page, search, viewSaved, savedIds]);
 
   const toggleSaved = (articleId) => {
     if (isArticleSaved(articleId)) {
@@ -66,6 +64,7 @@ function ArticlePage() {
     <div className="min-h-screen bg-gray-50 font-sans">
       <div className="relative overflow-hidden bg-gradient-to-br from-[#0f3d2e] via-[#145c3a] to-[#0f3d2e] px-6 pb-24 pt-20 text-white md:px-16">
         <div className="absolute left-1/4 top-0 h-96 w-96 rounded-full bg-green-500/20 blur-[100px]" />
+        
         <div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-8 md:flex-row md:items-end md:justify-between">
           <div className="max-w-2xl">
             <p className="mb-4 flex items-center gap-2 text-sm font-semibold tracking-widest text-green-300">
@@ -82,7 +81,7 @@ function ArticlePage() {
               Hand-crafted guides, insights, and resources to help you master new skills and build better software.
             </p>
           </div>
-          <div className="w-full md:w-[420px] space-y-3">
+          <div className="w-full md:w-auto flex items-center gap-3">
             <input
               type="text"
               value={search}
@@ -91,23 +90,19 @@ function ArticlePage() {
                 setSearch(e.target.value);
               }}
               placeholder="Search articles..."
-              className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white placeholder:text-gray-300 backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-green-400"
+              className="w-full md:w-[350px] h-[52px] rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white placeholder:text-gray-300 backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-green-400"
             />
-            <select
-              value={category}
-              onChange={(e) => {
-                setPage(1);
-                setCategory(e.target.value);
-              }}
-              className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-green-400"
+            <button
+              onClick={() => { setPage(1); setViewSaved(!viewSaved); }}
+              className={`flex-shrink-0 flex h-[52px] w-[52px] items-center justify-center rounded-2xl border transition-all backdrop-blur-md shadow-lg ${
+                viewSaved 
+                  ? "bg-green-500 text-white border-green-400 shadow-green-500/20" 
+                  : "bg-white/10 text-white border-white/20 hover:bg-white/20"
+              }`}
+              title={viewSaved ? "Show All Articles" : "Show Saved Articles"}
             >
-              <option value="" className="text-black">All categories</option>
-              {categories.map((cat) => (
-                <option key={cat._id} value={cat._id} className="text-black">
-                  {cat.name}
-                </option>
-              ))}
-            </select>
+              {viewSaved ? <BookmarkCheck className="w-6 h-6" fill="currentColor" /> : <Bookmark className="w-6 h-6" />}
+            </button>
           </div>
         </div>
       </div>
@@ -115,7 +110,9 @@ function ArticlePage() {
       <div className="relative z-20 -mt-14 px-4 pb-20 md:px-10">
         <div className="mx-auto max-w-6xl rounded-3xl border border-white bg-white/95 p-6 shadow-2xl backdrop-blur-xl md:p-12">
           <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <h3 className="text-3xl font-bold tracking-tight text-gray-800">Latest Articles</h3>
+            <h3 className="text-3xl font-bold tracking-tight text-gray-800">
+              {viewSaved ? "Your Saved Library" : "Latest Articles"}
+            </h3>
             <span className="text-sm font-semibold text-gray-500">{articles.length} article(s)</span>
           </div>
 
@@ -157,6 +154,14 @@ function ArticlePage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {viewSaved && !loading && articles.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-gray-200 p-12 text-center text-gray-500">
+            <Bookmark className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+            <p className="text-lg font-medium">You haven't saved any articles yet.</p>
+            <p className="mt-2 text-sm">Click the Save button on any article to add it to your library.</p>
           </div>
         )}
 

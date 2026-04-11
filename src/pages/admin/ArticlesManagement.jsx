@@ -14,31 +14,46 @@ const ArticlesManagement = () => {
   const [success, setSuccess] = useState("");
   const [search, setSearch] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const [editingArticle, setEditingArticle] = useState(null);
   const [form, setForm] = useState({
     title: "",
     description: "",
     content: "",
-    category: "",
-    imageUrl: "",
+    categories: [],
+    image: null,
   });
 
-  const fetchArticles = async () => {
-    setLoading(true);
-    setError("");
+  useEffect(() => {
+    const initData = async () => {
+      try {
+        const res = await api.get('/api/auth/me', true);
+        setCurrentUser(res.user);
+        const endpoint = res.user.role === "technicien" ? "/api/articles/me/all" : "/api/articles";
+        const data = await api.get(endpoint, true);
+        setArticles(data.data || []);
+      } catch (err) {
+        setError(err.message || "Failed to load data");
+      } finally {
+        setLoading(false);
+      }
+    };
+    initData();
+  }, []);
+
+  const fetchArticles = async (quiet = false) => {
+    if (!quiet) setLoading(true);
+    if (!quiet) setError("");
     try {
-      const data = await api.get("/api/articles", true);
+      const endpoint = currentUser?.role === "technicien" ? "/api/articles/me/all" : "/api/articles";
+      const data = await api.get(endpoint, true);
       setArticles(data.data || []);
     } catch (err) {
-      setError(err.message || "Failed to load articles");
+      if (!quiet) setError(err.message || "Failed to load articles");
     } finally {
-      setLoading(false);
+      if (!quiet) setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchArticles();
-  }, []);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -64,9 +79,19 @@ const ArticlesManagement = () => {
     try {
       await api.patch(`/api/articles/${id}/validate`, { status: "validated" }, true);
       setSuccess("Article validated successfully");
-      fetchArticles();
+      fetchArticles(true);
     } catch (err) {
       setError(err.message || "Validation failed");
+    }
+  };
+
+  const handleReject = async (id) => {
+    try {
+      await api.patch(`/api/articles/${id}/validate`, { status: "rejected" }, true);
+      setSuccess("Article rejected successfully");
+      fetchArticles(true);
+    } catch (err) {
+      setError(err.message || "Rejection failed");
     }
   };
 
@@ -74,7 +99,7 @@ const ArticlesManagement = () => {
     try {
       await api.delete(`/api/articles/${id}`, true);
       setSuccess("Article deleted successfully");
-      fetchArticles();
+      fetchArticles(true);
     } catch (err) {
       setError(err.message || "Delete failed");
     }
@@ -82,7 +107,13 @@ const ArticlesManagement = () => {
 
   const openCreateModal = () => {
     setEditingArticle(null);
-    setForm({ title: "", description: "", content: "", category: "", imageUrl: "" });
+    setForm({ 
+      title: "", 
+      description: "", 
+      content: "", 
+      categories: [], 
+      image: null 
+    });
     setIsCreateOpen(true);
   };
 
@@ -92,8 +123,8 @@ const ArticlesManagement = () => {
       title: article.title || "",
       description: article.description || "",
       content: article.content || "",
-      category: article.category?._id || article.category || "",
-      imageUrl: article.imageUrl || "",
+      categories: article.categories?.map(c => c._id || c) || [],
+      image: null,
     });
   };
 
@@ -107,27 +138,33 @@ const ArticlesManagement = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleFileChange = (e) => {
+    setForm((prev) => ({ ...prev, image: e.target.files[0] }));
+  };
+
   const submitArticle = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
-    const payload = {
-      title: form.title,
-      description: form.description,
-      content: form.content,
-      category: form.category || undefined,
-      imageUrl: form.imageUrl || undefined,
-    };
+    const formData = new FormData();
+    formData.append("title", form.title);
+    formData.append("description", form.description);
+    formData.append("content", form.content);
+    if (form.categories && form.categories.length > 0) {
+      formData.append("categories", JSON.stringify(form.categories));
+    }
+    if (form.image) formData.append("image", form.image);
+
     try {
       if (editingArticle?._id) {
-        await api.put(`/api/articles/${editingArticle._id}`, payload, true);
+        await api.put(`/api/articles/${editingArticle._id}`, formData, true, true);
         setSuccess("Article updated successfully");
       } else {
-        await api.post("/api/articles", payload, true);
+        await api.post("/api/articles", formData, true, true);
         setSuccess("Article created successfully");
       }
       closeModal();
-      fetchArticles();
+      fetchArticles(true);
     } catch (err) {
       setError(err.message || "Article save failed");
     }
@@ -180,14 +217,18 @@ const ArticlesManagement = () => {
                   key={article._id}
                   id={article._id}
                   title={article.title}
-                  category={article.category?.name || "SI"}
+                  description={article.description}
+                  category={article.categories && article.categories.length > 0 ? article.categories[0].name : "SI"}
                   date={new Date(article.createdAt).toLocaleDateString()}
                   image={article.imageUrl ? `${API_BASE_URL}${article.imageUrl}` : undefined}
                   status={article.status === "validated" ? "Validated" : "Pending"}
                   index={index}
                   onValidate={handleValidate}
+                  onReject={handleReject}
                   onDelete={handleDelete}
                   onEdit={() => openEditModal(article)}
+                  canManage={currentUser?.role === "admin" || currentUser?._id === article.author?._id}
+                  isAdmin={currentUser?.role === "admin"}
                 />
               ))}
             </AnimatePresence>
@@ -226,25 +267,42 @@ const ArticlesManagement = () => {
             rows={6}
             required
           />
-          <select
-            name="category"
-            value={form.category}
-            onChange={handleFormChange}
-            className="rounded-xl border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          >
-            <option value="">Choisir une categorie</option>
-            {categories.map((cat) => (
-              <option key={cat._id} value={cat._id}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-700">Catégories (Sélectionnez une ou plusieurs)</label>
+            <div className="flex flex-wrap gap-2">
+              {categories.map((cat) => {
+                const isSelected = form.categories.includes(cat._id);
+                return (
+                  <button
+                    key={cat._id}
+                    type="button"
+                    onClick={() => {
+                      setForm(prev => {
+                        if (isSelected) {
+                          return { ...prev, categories: prev.categories.filter(id => id !== cat._id) };
+                        } else {
+                          return { ...prev, categories: [...prev.categories, cat._id] };
+                        }
+                      });
+                    }}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                      isSelected 
+                        ? "bg-emerald-600 text-white shadow-md shadow-emerald-200" 
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    {cat.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <input
-            name="imageUrl"
-            value={form.imageUrl}
-            onChange={handleFormChange}
-            placeholder="URL image (optionnel)"
-            className="rounded-xl border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            type="file"
+            name="image"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="rounded-xl border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
           />
           <div className="mt-2 flex justify-end gap-2">
             <button

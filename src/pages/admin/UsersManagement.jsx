@@ -7,6 +7,7 @@ import AdminUserComponent from "../../components/AdminUserComponent";
 
 const UsersManagement = () => {
   const [users, setUsers] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -18,14 +19,15 @@ const UsersManagement = () => {
     email: "",
     password: "",
     role: "technicien",
+    domain: "",
   });
 
   const fetchUsers = async () => {
     setLoading(true);
     setError("");
     try {
-      const data = await api.get("/api/users", true);
-      setUsers(data);
+      const response = await api.get("/api/admin/users", true);
+      setUsers(response.data || []);
     } catch (err) {
       setError(err.message || "Failed to load users");
     } finally {
@@ -35,6 +37,9 @@ const UsersManagement = () => {
 
   useEffect(() => {
     fetchUsers();
+    api.get("/api/categories", true)
+      .then(res => setCategories(res || []))
+      .catch(() => setCategories([]));
   }, []);
 
   const removeUser = async (id) => {
@@ -60,7 +65,7 @@ const UsersManagement = () => {
     try {
       await api.patch(
         `/api/admin/users/${selectedUser._id}/role`,
-        { role: selectedUser.role },
+        { role: selectedUser.role, domain: selectedUser.domain?._id || selectedUser.domain },
         true
       );
       setSuccess("Role changed successfully");
@@ -77,7 +82,7 @@ const UsersManagement = () => {
       await api.post("/api/users", newUser, true);
       setSuccess("User created successfully");
       setIsCreateOpen(false);
-      setNewUser({ name: "", email: "", password: "", role: "technicien" });
+      setNewUser({ name: "", email: "", password: "", role: "technicien", domain: "" });
       fetchUsers();
     } catch (err) {
       setError(err.message || "Failed to create user");
@@ -132,7 +137,7 @@ const UsersManagement = () => {
                   id={user._id}
                   username={user.email.split("@")[0]}
                   fullName={user.name}
-                  category={"SI"}
+                  category={user.domain?.name || "Sans domaine"}
                   role={user.role === "admin" ? "Administrateur" : "Technicien"}
                   index={index}
                   onEdit={() => setSelectedUser({ ...user })}
@@ -157,6 +162,16 @@ const UsersManagement = () => {
             >
               <option value="technicien">Technicien</option>
               <option value="admin">Administrateur</option>
+            </select>
+            <select
+              value={selectedUser.domain?._id || selectedUser.domain || ""}
+              onChange={(e) => setSelectedUser((prev) => ({ ...prev, domain: e.target.value }))}
+              className="rounded-xl border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+              <option value="">Choisir un domaine</option>
+              {categories.map((cat) => (
+                <option key={cat._id} value={cat._id}>{cat.name}</option>
+              ))}
             </select>
             <div className="flex justify-end gap-2">
               <button
@@ -208,6 +223,17 @@ const UsersManagement = () => {
           >
             <option value="technicien">Technicien</option>
             <option value="admin">Administrateur</option>
+          </select>
+          <select
+            value={newUser.domain}
+            onChange={(e) => setNewUser((prev) => ({ ...prev, domain: e.target.value }))}
+            className="rounded-xl border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            required
+          >
+            <option value="">Choisir un domaine (Optionnel)</option>
+            {categories.map((cat) => (
+              <option key={cat._id} value={cat._id}>{cat.name}</option>
+            ))}
           </select>
           <div className="flex justify-end gap-2">
             <button

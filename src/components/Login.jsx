@@ -17,7 +17,8 @@ function Login() {
     try {
       const response = await api.post("/api/auth/login", { email, password });
       localStorage.setItem("token", response.token);
-      navigate("/admin/articles", { replace: true });
+      localStorage.setItem("user", JSON.stringify(response.user));
+      navigate(`/${response.user._id}/articles`, { replace: true });
     } catch (err) {
       setError(err.message || "Login failed");
     } finally {
@@ -28,16 +29,12 @@ function Login() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-r from-green-300 to-green-700 px-4">
       <div className="w-full max-w-md rounded-2xl border border-white/30 bg-white/90 p-8 shadow-2xl backdrop-blur-lg">
-        <h2 className="mb-6 text-center text-3xl font-bold tracking-tight text-gray-800">
-          Welcome Back
-        </h2>
-
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Username"
+            placeholder="Email"
             className="rounded-lg border border-gray-200 bg-gray-50 p-3 shadow-sm transition-all duration-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500"
             required
           />

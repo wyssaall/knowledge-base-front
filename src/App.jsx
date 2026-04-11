@@ -21,15 +21,15 @@ function App() {
 
         {/* Admin Section with Layout */}
         <Route
-          path="/admin"
+          path="/:id"
           element={
             <ProtectedRoute>
               <AdminLayout />
             </ProtectedRoute>
           }
         >
-          {/* Redirect /admin to /admin/articles */}
-          <Route index element={<Navigate to="/admin/articles" replace />} />
+          {/* Redirect /:id to /:id/articles */}
+          <Route index element={<Navigate to="articles" replace />} />
           <Route path="articles" element={<ArticlesManagement />} />
           <Route path="users" element={<UsersManagement />} />
           <Route path="categories" element={<CategoriesManagement />} />
@@ -40,7 +40,7 @@ function App() {
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <Navigate to="/admin/articles" replace />
+              <Navigate to="/" replace />
             </ProtectedRoute>
           }
         />

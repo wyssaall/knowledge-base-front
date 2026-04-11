@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { Edit2, Trash2, Calendar, CheckCircle, Clock, XCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Edit2, Trash2, Calendar, CheckCircle, Clock } from "lucide-react";
 
 
 const categoryColors = {
@@ -16,7 +17,7 @@ const AdminArticleComponent = ({
   category, 
   date, 
   image, 
-  status = "Validated", 
+  status = "validated", 
   index = 0,
   onValidate,
   onDelete,
@@ -25,7 +26,8 @@ const AdminArticleComponent = ({
   isAdmin = false,
   onReject
 }) => {
-  const isPending = status === "Pending";
+  const { t } = useTranslation();
+  const isPending = status !== "validated";
 
   return (
     <motion.div
@@ -56,7 +58,7 @@ const AdminArticleComponent = ({
           isPending ? "bg-amber-100/90 text-amber-700 border border-amber-200" : "bg-emerald-100/90 text-emerald-700 border border-emerald-200"
         }`}>
           {isPending ? <Clock size={12} /> : <CheckCircle size={12} />}
-          {isPending ? "Pending" : "Validated"}
+          {isPending ? t('admin.status_pending') : t('admin.status_validated')}
         </div>
       </div>
 
@@ -87,28 +89,28 @@ const AdminArticleComponent = ({
                   onClick={() => onValidate(id)}
                   className="flex-1 bg-emerald-600 text-white text-[11px] font-bold h-9 flex items-center justify-center rounded-xl hover:bg-emerald-700 transition-all shadow-md shadow-emerald-100"
                 >
-                  Valider
+                  {t('admin.validate')}
                 </button>
                 <button 
                   onClick={() => onReject && onReject(id)}
                   className="flex-1 bg-amber-500 text-white text-[11px] font-bold h-9 flex items-center justify-center rounded-xl hover:bg-amber-600 transition-all shadow-md shadow-amber-100"
                 >
-                  Refuser
+                  {t('admin.reject')}
                 </button>
               </>
             ) : (
-              <button
-                onClick={() => onEdit && onEdit(id)}
-                className="flex-1 text-[11px] h-9 flex items-center justify-center rounded-xl hover:bg-emerald-50 transition-all text-gray-600 font-bold border border-transparent hover:border-emerald-100 bg-gray-50"
-              >
-                <Edit2 className="w-3.5 h-3.5 mr-2" /> Modifier
-              </button>
-            )}
+                <button
+                  onClick={() => onEdit && onEdit(id)}
+                  className="flex-1 text-[11px] h-9 flex items-center justify-center rounded-xl hover:bg-emerald-50 transition-all text-gray-600 font-bold border border-transparent hover:border-emerald-100 bg-gray-50"
+                >
+                  <Edit2 className="w-3.5 h-3.5 mr-2" /> {t('admin.edit')}
+                </button>
+              )}
             
             <button 
               onClick={() => onDelete(id)}
               className="w-10 text-xs h-9 flex items-center justify-center rounded-xl text-rose-500 hover:bg-rose-50 transition-all border border-transparent hover:border-rose-100"
-              title="Supprimer"
+              title={t('admin.delete')}
             >
               <Trash2 className="w-4 h-4" />
             </button>

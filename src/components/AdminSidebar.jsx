@@ -8,9 +8,12 @@ import {
   LogOut, 
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import api from '../services/api';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const AdminSidebar = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams();
   const [user, setUser] = useState(null);
@@ -29,25 +32,25 @@ const AdminSidebar = () => {
 
   const menuItems = [
     { 
-      title: 'Articles', 
+      title: t('nav.articles'), 
       path: `/${id}/articles`, 
       icon: <FileText size={20} />,
       roles: ['admin', 'technicien']
     },
     { 
-      title: 'Utilisateurs', 
+      title: t('nav.users'), 
       path: `/${id}/users`, 
       icon: <Users size={20} />,
       roles: ['admin'] 
     },
     { 
-      title: 'Categories', 
+      title: t('nav.categories'), 
       path: `/${id}/categories`, 
       icon: <Tag size={20} />,
-      roles: ['admin'] // Restricted to admin ONLY so tech can't add categories
+      roles: ['admin']
     },
     { 
-      title: 'Comments', 
+      title: t('nav.comments'), 
       path: `/${id}/comments`, 
       icon: <MessageSquareText size={20} />,
       roles: ['admin'] 
@@ -101,11 +104,15 @@ const AdminSidebar = () => {
       </nav>
 
       {/* Footer / User Profile */}
-      <div className="p-4 border-t border-gray-100">
+      <div className="p-4 border-t border-gray-100 flex flex-col gap-4">
+        <div className="flex justify-center bg-gray-900 rounded-xl p-2">
+            <LanguageSwitcher />
+        </div>
+        
         {user && (
-          <div className="mb-4 flex flex-col items-center px-2">
+          <div className="flex flex-col items-center px-2">
             <div className="text-sm font-bold text-gray-800">{user.name}</div>
-            <div className="text-xs text-gray-500 capitalize">{user.role}</div>
+            <div className="text-xs text-gray-500 capitalize">{user.role === 'admin' ? t('admin.administrator') : t('admin.technician')}</div>
             <div className="text-xs font-semibold text-emerald-600 mt-1 uppercase tracking-wider">{user.domain?.name || user.domain || "Sans domaine"}</div>
           </div>
         )}
@@ -114,7 +121,7 @@ const AdminSidebar = () => {
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
         >
           <LogOut size={18} />
-          <span className="text-sm font-medium">Déconnexion</span>
+          <span className="text-sm font-medium">{t('nav.logout')}</span>
         </button>
       </div>
     </div>

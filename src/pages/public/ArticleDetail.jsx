@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import api, { API_BASE_URL } from "../../services/api";
+import LanguageSwitcher from "../../components/LanguageSwitcher";
 
 function ArticleDetail() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -29,7 +32,7 @@ function ArticleDetail() {
         const data = await api.get(`/api/public/articles/${id}`);
         setArticle(data.data);
       } catch (err) {
-        setError(err.message || "Failed to load article");
+        setError(err.message || t('common.error'));
       } finally {
         setLoading(false);
       }
@@ -57,7 +60,7 @@ function ArticleDetail() {
     }
   };
 
-  if (loading) return <div className="flex min-h-screen items-center justify-center bg-gray-50 text-emerald-700 font-bold">Loading...</div>;
+  if (loading) return <div className="flex min-h-screen items-center justify-center bg-gray-50 text-emerald-700 font-bold">{t('common.loading')}</div>;
   if (error) return <div className="flex min-h-screen items-center justify-center bg-gray-50 text-red-600 font-bold">{error}</div>;
   if (!article) return <div className="flex min-h-screen items-center justify-center bg-gray-50 text-gray-600 font-bold">Article not found</div>;
 
@@ -66,11 +69,16 @@ function ArticleDetail() {
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-br from-[#0f3d2e] via-[#145c3a] to-[#0f3d2e] px-6 pt-20 pb-32 text-white md:px-16">
         <div className="absolute left-1/4 top-0 h-96 w-96 rounded-full bg-green-500/20 blur-[100px]" />
+        
+        <div className="absolute top-6 left-6 md:top-8 md:left-12 z-20">
+          <LanguageSwitcher />
+        </div>
+
         <Link to="/" className="relative z-10 mb-8 inline-flex items-center gap-2 text-sm font-semibold text-green-300 hover:text-white transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
           </svg>
-          BACK TO ALL ARTICLES
+          {t('nav.back_to_all')}
         </Link>
         <div className="relative z-10 mx-auto max-w-4xl text-center">
           <h1 className="mb-6 text-4xl font-extrabold leading-tight md:text-6xl tracking-tight">
@@ -102,11 +110,11 @@ function ArticleDetail() {
         {/* Comments Section */}
         <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-xl md:p-12">
           <h3 className="mb-8 text-2xl font-bold tracking-tight text-gray-900 border-b border-gray-100 pb-4">
-            Discussion ({comments.length})
+            {t('public.comments_title')} ({comments.length})
           </h3>
 
           <form onSubmit={handleCommentSubmit} className="mb-12 bg-gray-50 p-6 rounded-2xl border border-gray-100">
-            <h4 className="font-semibold text-gray-800 mb-4 text-lg">Leave a comment</h4>
+            <h4 className="font-semibold text-gray-800 mb-4 text-lg">{t('public.leave_comment')}</h4>
             <input
               type="text"
               className="mb-4 w-full rounded-xl border border-gray-200 bg-white p-3.5 shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200 transition-all font-medium"
@@ -129,7 +137,7 @@ function ArticleDetail() {
                 disabled={submittingComment || !newComment.trim()}
                 className="rounded-xl bg-gradient-to-r from-green-600 to-green-500 px-8 py-3 font-bold tracking-wide text-white shadow-md transition-all hover:scale-105 hover:shadow-lg disabled:opacity-60 disabled:hover:scale-100"
               >
-                {submittingComment ? "Posting..." : "Post Comment"}
+                {submittingComment ? t('public.posting') : t('public.post_comment')}
               </button>
             </div>
           </form>
@@ -137,7 +145,7 @@ function ArticleDetail() {
           <div className="space-y-6">
             {comments.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-gray-200 p-10 text-center text-gray-500 bg-gray-50/50 font-medium">
-                No comments yet. Be the first to share your thoughts!
+                {t('public.no_comments')}
               </div>
             ) : (
               comments.map((comment) => (
@@ -149,7 +157,7 @@ function ArticleDetail() {
                       </div>
                       <div>
                         <span className="block font-bold text-gray-900 text-lg">
-                          {comment.author ? comment.author.name : comment.pseudoName || "Anonymous"}
+                          {comment.author ? comment.author.name : comment.pseudoName || t('public.anonymous')}
                         </span>
                         <span className="text-sm font-medium text-gray-400">
                           {new Date(comment.createdAt).toLocaleDateString(undefined, {

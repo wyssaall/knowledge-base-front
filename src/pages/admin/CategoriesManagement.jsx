@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Tag, PlusCircle, Trash2 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import api from "../../services/api";
 import Modal from "../../components/Modal";
 
 function CategoriesManagement() {
+  const { t } = useTranslation();
   const [categories, setCategories] = useState([]);
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(true);
@@ -61,20 +63,20 @@ function CategoriesManagement() {
             <div className="rounded-2xl bg-emerald-600 p-3 text-white">
               <Tag size={20} />
             </div>
-            <h1 className="text-2xl font-extrabold text-gray-900">Gestion des Categories</h1>
+            <h1 className="text-2xl font-extrabold text-gray-900">{t('admin.categories_title')}</h1>
           </div>
           <button
             onClick={() => setIsCreateOpen(true)}
             className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
           >
-            <PlusCircle size={16} /> Ajouter une categorie
+            <PlusCircle size={16} /> {t('categories.add_new')}
           </button>
         </div>
 
         {error && <p className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
         {success && <p className="mb-4 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-700">{success}</p>}
         {loading ? (
-          <p>Loading...</p>
+          <p>{t('common.loading')}</p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <AnimatePresence>
@@ -102,16 +104,16 @@ function CategoriesManagement() {
         )}
       </div>
 
-      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Ajouter une categorie">
+      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title={t('categories.add_new')}>
         <form onSubmit={createCategory} className="flex gap-3">
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Nom de categorie"
+            placeholder={t('admin.category_name_placeholder')}
             className="h-11 flex-1 rounded-xl border border-gray-200 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
           <button className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
-            <PlusCircle size={16} /> Ajouter
+            <PlusCircle size={16} /> {t('admin.add')}
           </button>
         </form>
       </Modal>

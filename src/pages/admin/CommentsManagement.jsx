@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { MessageSquareText, Trash2, Save } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import api from "../../services/api";
 import Modal from "../../components/Modal";
 
 function CommentsManagement() {
+  const { t } = useTranslation();
   const [comments, setComments] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [editingContent, setEditingContent] = useState("");
@@ -66,20 +68,20 @@ function CommentsManagement() {
             <div className="rounded-2xl bg-emerald-600 p-3 text-white">
               <MessageSquareText size={20} />
             </div>
-            <h1 className="text-2xl font-extrabold text-gray-900">Gestion des Comments</h1>
+            <h1 className="text-2xl font-extrabold text-gray-900">{t('admin.comments_title')}</h1>
           </div>
         </div>
 
         {error && <p className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
         {success && <p className="mb-4 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-700">{success}</p>}
         {loading ? (
-          <p>Loading...</p>
+          <p>{t('common.loading')}</p>
         ) : (
           <div className="space-y-4">
             {comments.map((comment) => (
               <div key={comment._id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
                 <p className="mb-1 text-xs text-gray-500">
-                  Article: {comment.article?.title || "N/A"} | Auteur: {comment.author?.name || "N/A"}
+                  Article: {comment.article?.title || "N/A"} | {t('comments.author')}: {comment.author?.name || "N/A"}
                 </p>
 
                 {editingId === comment._id ? (
@@ -93,7 +95,7 @@ function CommentsManagement() {
                       onClick={submitEdit}
                       className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
                     >
-                      <Save size={14} /> Save
+                      <Save size={14} /> {t('admin.save')}
                     </button>
                   </div>
                 ) : (
@@ -105,13 +107,13 @@ function CommentsManagement() {
                     onClick={() => startEdit(comment)}
                     className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200"
                   >
-                    Edit
+                    {t('admin.edit')}
                   </button>
                   <button
                     onClick={() => setDeleteId(comment._id)}
                     className="inline-flex items-center gap-1 rounded-lg bg-rose-100 px-3 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-200"
                   >
-                    <Trash2 size={14} /> Delete
+                    <Trash2 size={14} /> {t('admin.delete')}
                   </button>
                 </div>
               </div>
@@ -123,20 +125,20 @@ function CommentsManagement() {
       <Modal
         isOpen={Boolean(deleteId)}
         onClose={() => setDeleteId(null)}
-        title="Supprimer ce comment ?"
+        title={t('comments.delete_confirm')}
       >
         <div className="flex justify-end gap-2">
           <button
             onClick={() => setDeleteId(null)}
             className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700"
           >
-            Annuler
+            {t('admin.cancel')}
           </button>
           <button
             onClick={() => removeComment(deleteId)}
             className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700"
           >
-            Supprimer
+            {t('admin.delete')}
           </button>
         </div>
       </Modal>

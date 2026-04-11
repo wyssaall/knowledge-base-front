@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Bookmark, BookmarkCheck } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import api, { API_BASE_URL } from "../../services/api";
 import { getSavedArticles, isArticleSaved, removeSavedArticle, saveArticle } from "../../utils/savedArticles";
+import LanguageSwitcher from "../../components/LanguageSwitcher";
 
 function ArticlePage() {
+  const { t } = useTranslation();
   const [articles, setArticles] = useState([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -65,20 +68,24 @@ function ArticlePage() {
       <div className="relative overflow-hidden bg-gradient-to-br from-[#0f3d2e] via-[#145c3a] to-[#0f3d2e] px-6 pb-24 pt-20 text-white md:px-16">
         <div className="absolute left-1/4 top-0 h-96 w-96 rounded-full bg-green-500/20 blur-[100px]" />
         
+        <div className="absolute top-6 left-6 md:top-8 md:left-12 z-20">
+          <LanguageSwitcher />
+        </div>
+
         <div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-8 md:flex-row md:items-end md:justify-between">
           <div className="max-w-2xl">
             <p className="mb-4 flex items-center gap-2 text-sm font-semibold tracking-widest text-green-300">
-              <span className="h-px w-8 bg-green-400" /> KNOWLEDGE BASE
+              <span className="h-px w-8 bg-green-400" /> {t('public.hero_tagline')}
             </p>
             <h1 className="mb-6 text-5xl font-bold leading-[1.1] md:text-7xl">
-              Read. Learn. <br />
+              {t('public.hero_title').split('.')[0]}. {t('public.hero_title').split('.')[1]}. <br />
               <span className="relative text-green-400">
-                Build.
+                {t('public.hero_title').split('.')[2].trim()}
                 <span className="absolute bottom-1 left-0 -z-10 h-3 w-full rounded bg-green-500/30" />
               </span>
             </h1>
             <p className="max-w-xl text-lg leading-relaxed text-green-100/90 md:text-xl">
-              Hand-crafted guides, insights, and resources to help you master new skills and build better software.
+              {t('public.hero_desc')}
             </p>
           </div>
           <div className="w-full md:w-auto flex items-center gap-3">
@@ -89,7 +96,7 @@ function ArticlePage() {
                 setPage(1);
                 setSearch(e.target.value);
               }}
-              placeholder="Search articles..."
+              placeholder={t('public.search_placeholder')}
               className="w-full md:w-[350px] h-[52px] rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white placeholder:text-gray-300 backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-green-400"
             />
             <button
@@ -111,15 +118,15 @@ function ArticlePage() {
         <div className="mx-auto max-w-6xl rounded-3xl border border-white bg-white/95 p-6 shadow-2xl backdrop-blur-xl md:p-12">
           <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <h3 className="text-3xl font-bold tracking-tight text-gray-800">
-              {viewSaved ? "Your Saved Library" : "Latest Articles"}
+              {viewSaved ? t('public.saved_library') : t('public.latest_articles')}
             </h3>
-            <span className="text-sm font-semibold text-gray-500">{articles.length} article(s)</span>
+            <span className="text-sm font-semibold text-gray-500">{articles.length} {t('nav.articles').toLowerCase()}</span>
           </div>
 
         {error && <p className="mb-4 text-red-600">{error}</p>}
 
         {loading ? (
-          <p className="text-gray-600">Loading articles...</p>
+          <p className="text-gray-600">{t('common.loading')}</p>
         ) : (
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {articles.map((article) => (
@@ -149,7 +156,7 @@ function ArticlePage() {
                         : "bg-gray-100 text-gray-700"
                     }`}
                   >
-                    {savedIds.includes(article._id) ? "Saved" : "Save"}
+                    {savedIds.includes(article._id) ? t('public.saved') : t('public.save')}
                   </button>
                 </div>
               </div>
@@ -160,8 +167,8 @@ function ArticlePage() {
         {viewSaved && !loading && articles.length === 0 && (
           <div className="rounded-2xl border border-dashed border-gray-200 p-12 text-center text-gray-500">
             <Bookmark className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-            <p className="text-lg font-medium">You haven't saved any articles yet.</p>
-            <p className="mt-2 text-sm">Click the Save button on any article to add it to your library.</p>
+            <p className="text-lg font-medium">{t('public.no_saved')}</p>
+            <p className="mt-2 text-sm">{t('public.no_saved_desc')}</p>
           </div>
         )}
 
@@ -171,17 +178,17 @@ function ArticlePage() {
             disabled={page === 1}
             className="rounded-lg border border-gray-300 px-4 py-2 disabled:opacity-50"
           >
-            Previous
+            {t('common.previous')}
           </button>
           <span className="text-sm text-gray-700">
-            Page {page} / {totalPages}
+            {t('common.page')} {page} / {totalPages}
           </span>
           <button
             onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
             disabled={page >= totalPages}
             className="rounded-lg border border-gray-300 px-4 py-2 disabled:opacity-50"
           >
-            Next
+            {t('common.next')}
           </button>
         </div>
         </div>

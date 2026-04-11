@@ -1,12 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { PlusCircle, Search, FileText } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import api from "../../services/api";
 import Modal from "../../components/Modal";
 import AdminArticleComponent from "../../components/AdminArticleComponent";
 import { API_BASE_URL } from "../../services/api";
 
 const ArticlesManagement = () => {
+  const { t } = useTranslation();
   const [articles, setArticles] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -180,15 +182,15 @@ const ArticlesManagement = () => {
                 <FileText className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Gestion des Articles</h1>
-                <p className="text-sm text-gray-500 font-medium italic">Ajouter, valider et organiser votre base</p>
+                <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">{t('admin.articles_title')}</h1>
+                <p className="text-sm text-gray-500 font-medium italic">{t('admin.add_article_desc')}</p>
               </div>
             </div>
             <button
               onClick={openCreateModal}
               className="inline-flex items-center px-6 py-3 rounded-xl text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-100 transition-all"
             >
-              <PlusCircle className="w-4 h-4 mr-2" /> Nouvel Article
+              <PlusCircle className="w-4 h-4 mr-2" /> {t('admin.new_article')}
             </button>
           </div>
         </div>
@@ -200,7 +202,7 @@ const ArticlesManagement = () => {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher un article..."
+            placeholder={t('admin.search_article')}
             className="w-full h-12 pl-12 pr-4 rounded-2xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
           />
         </div>
@@ -208,7 +210,7 @@ const ArticlesManagement = () => {
         {success && <p className="mb-4 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-700">{success}</p>}
 
         {loading ? (
-          <p>Loading...</p>
+          <p>{t('common.loading')}</p>
         ) : (
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <AnimatePresence>
@@ -221,7 +223,7 @@ const ArticlesManagement = () => {
                   category={article.categories && article.categories.length > 0 ? article.categories[0].name : "SI"}
                   date={new Date(article.createdAt).toLocaleDateString()}
                   image={article.imageUrl ? `${API_BASE_URL}${article.imageUrl}` : undefined}
-                  status={article.status === "validated" ? "Validated" : "Pending"}
+                  status={article.status}
                   index={index}
                   onValidate={handleValidate}
                   onReject={handleReject}
@@ -239,14 +241,14 @@ const ArticlesManagement = () => {
       <Modal
         isOpen={isCreateOpen || Boolean(editingArticle)}
         onClose={closeModal}
-        title={editingArticle ? "Modifier un article" : "Ajouter un article"}
+        title={editingArticle ? t('admin.edit') : t('admin.new_article')}
       >
         <form onSubmit={submitArticle} className="grid gap-4">
           <input
             name="title"
             value={form.title}
             onChange={handleFormChange}
-            placeholder="Titre"
+            placeholder={t('admin.title_placeholder')}
             className="rounded-xl border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             required
           />
@@ -254,7 +256,7 @@ const ArticlesManagement = () => {
             name="description"
             value={form.description}
             onChange={handleFormChange}
-            placeholder="Description courte"
+            placeholder={t('admin.desc_placeholder')}
             className="rounded-xl border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             rows={2}
           />
@@ -262,13 +264,13 @@ const ArticlesManagement = () => {
             name="content"
             value={form.content}
             onChange={handleFormChange}
-            placeholder="Contenu"
+            placeholder={t('admin.content_placeholder')}
             className="rounded-xl border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             rows={6}
             required
           />
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-gray-700">Catégories (Sélectionnez une ou plusieurs)</label>
+            <label className="text-sm font-medium text-gray-700">{t('admin.categories_select')}</label>
             <div className="flex flex-wrap gap-2">
               {categories.map((cat) => {
                 const isSelected = form.categories.includes(cat._id);
@@ -310,13 +312,13 @@ const ArticlesManagement = () => {
               onClick={closeModal}
               className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700"
             >
-              Annuler
+              {t('admin.cancel')}
             </button>
             <button
               type="submit"
               className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
             >
-              {editingArticle ? "Modifier" : "Ajouter"}
+              {editingArticle ? t('admin.edit') : t('admin.new_article')}
             </button>
           </div>
         </form>

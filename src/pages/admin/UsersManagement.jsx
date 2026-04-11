@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { Search, ShieldCheck, UserPlus } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import api from "../../services/api";
 import Modal from "../../components/Modal";
 import AdminUserComponent from "../../components/AdminUserComponent";
 
 const UsersManagement = () => {
+  const { t } = useTranslation();
   const [users, setUsers] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -99,15 +101,15 @@ const UsersManagement = () => {
                 <ShieldCheck className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Gestion des Utilisateurs</h1>
-                <p className="text-sm text-gray-500 font-medium italic">Accès réservé aux administrateurs</p>
+                <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">{t('admin.users_title')}</h1>
+                <p className="text-sm text-gray-500 font-medium italic">{t('admin.admin_only')}</p>
               </div>
             </div>
             <button
               onClick={() => setIsCreateOpen(true)}
               className="inline-flex items-center px-6 py-3 rounded-xl text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-100 transition-all"
             >
-              <UserPlus className="w-4 h-4 mr-2" /> Nouvel Utilisateur
+              <UserPlus className="w-4 h-4 mr-2" /> {t('admin.new_user')}
             </button>
           </div>
         </div>
@@ -119,7 +121,7 @@ const UsersManagement = () => {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher un utilisateur..."
+            placeholder={t('admin.search_user')}
             className="w-full h-12 pl-12 pr-4 rounded-2xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm transition-all bg-white"
           />
         </div>
@@ -138,7 +140,7 @@ const UsersManagement = () => {
                   username={user.email.split("@")[0]}
                   fullName={user.name}
                   category={user.domain?.name || "Sans domaine"}
-                  role={user.role === "admin" ? "Administrateur" : "Technicien"}
+                  role={user.role === "admin" ? t('admin.administrator') : t('admin.technician')}
                   index={index}
                   onEdit={() => setSelectedUser({ ...user })}
                   onDelete={removeUser}
@@ -149,26 +151,26 @@ const UsersManagement = () => {
         )}
       </div>
 
-      <Modal isOpen={Boolean(selectedUser)} onClose={() => setSelectedUser(null)} title="Modifier le role">
+      <Modal isOpen={Boolean(selectedUser)} onClose={() => setSelectedUser(null)} title={t('admin.edit_role')}>
         {selectedUser && (
           <div className="grid gap-4">
             <p className="text-sm text-gray-600">
-              Update role for <span className="font-semibold">{selectedUser.name}</span>
+              {t('admin.update_role_for')} <span className="font-semibold">{selectedUser.name}</span>
             </p>
             <select
               value={selectedUser.role}
               onChange={(e) => setSelectedUser((prev) => ({ ...prev, role: e.target.value }))}
               className="rounded-xl border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
-              <option value="technicien">Technicien</option>
-              <option value="admin">Administrateur</option>
+              <option value="technicien">{t('admin.technician')}</option>
+              <option value="admin">{t('admin.administrator')}</option>
             </select>
             <select
               value={selectedUser.domain?._id || selectedUser.domain || ""}
               onChange={(e) => setSelectedUser((prev) => ({ ...prev, domain: e.target.value }))}
               className="rounded-xl border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
-              <option value="">Choisir un domaine</option>
+              <option value="">{t('admin.choose_domain')}</option>
               {categories.map((cat) => (
                 <option key={cat._id} value={cat._id}>{cat.name}</option>
               ))}
@@ -178,25 +180,25 @@ const UsersManagement = () => {
                 onClick={() => setSelectedUser(null)}
                 className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700"
               >
-                Annuler
+                {t('admin.cancel')}
               </button>
               <button
                 onClick={updateSelectedRole}
                 className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
               >
-                Enregistrer
+                {t('admin.save')}
               </button>
             </div>
           </div>
         )}
       </Modal>
 
-      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Ajouter un utilisateur">
+      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title={t('admin.new_user')}>
         <form onSubmit={createUser} className="grid gap-4">
           <input
             value={newUser.name}
             onChange={(e) => setNewUser((prev) => ({ ...prev, name: e.target.value }))}
-            placeholder="Nom complet"
+            placeholder={t('admin.user_name_placeholder')}
             className="rounded-xl border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             required
           />
@@ -204,7 +206,7 @@ const UsersManagement = () => {
             type="email"
             value={newUser.email}
             onChange={(e) => setNewUser((prev) => ({ ...prev, email: e.target.value }))}
-            placeholder="Email"
+            placeholder={t('auth.email_placeholder')}
             className="rounded-xl border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             required
           />
@@ -212,7 +214,7 @@ const UsersManagement = () => {
             type="password"
             value={newUser.password}
             onChange={(e) => setNewUser((prev) => ({ ...prev, password: e.target.value }))}
-            placeholder="Mot de passe"
+            placeholder={t('auth.password_placeholder')}
             className="rounded-xl border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             required
           />
@@ -221,8 +223,8 @@ const UsersManagement = () => {
             onChange={(e) => setNewUser((prev) => ({ ...prev, role: e.target.value }))}
             className="rounded-xl border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
-            <option value="technicien">Technicien</option>
-            <option value="admin">Administrateur</option>
+            <option value="technicien">{t('admin.technician')}</option>
+            <option value="admin">{t('admin.administrator')}</option>
           </select>
           <select
             value={newUser.domain}
@@ -230,7 +232,7 @@ const UsersManagement = () => {
             className="rounded-xl border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             required
           >
-            <option value="">Choisir un domaine (Optionnel)</option>
+            <option value="">{t('admin.choose_domain')} ({t('admin.optional')})</option>
             {categories.map((cat) => (
               <option key={cat._id} value={cat._id}>{cat.name}</option>
             ))}
@@ -241,13 +243,13 @@ const UsersManagement = () => {
               onClick={() => setIsCreateOpen(false)}
               className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700"
             >
-              Annuler
+              {t('admin.cancel')}
             </button>
             <button
               type="submit"
               className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
             >
-              Ajouter
+              {t('admin.add')}
             </button>
           </div>
         </form>
